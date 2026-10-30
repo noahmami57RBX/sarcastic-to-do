@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sarcastic To-Do</title>
+<style>
+  :root {
+    --bg: #fdf6ec;
+    --card: #ffffff;
+    --ink: #2d2a26;
+    --muted: #8a8378;
+    --accent: #e85d75;
+    --accent-dark: #d14a62;
+    --done: #6dbb8a;
+    --shadow: 0 2px 10px rgba(45, 42, 38, 0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .composer {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .composer input {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 2px solid #eee4d6;
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .composer input:focus { border-color: var(--accent); }
+  .composer input::placeholder { color: #c4bcb0; }
+
+  .composer button {
+    padding: 0 20px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .composer button:active { transform: scale(0.95); background: var(--accent-dark); }
+
+  .quip {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 10px 16px;
+    font-size: 15px;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    margin-bottom: 16px;
+  }
+
+  .quip.show { opacity: 1; transform: translateY(0); }
+  .quip.complete { border-left: 4px solid var(--done); }
+  .quip.add { border-left: 4px solid var(--accent); }
+
+  ul.tasks { list-style: none; }
+
+  li.task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+    animation: pop 0.2s ease;
+  }
+
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  li.task input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--done);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  li.task .label {
+    flex: 1;
+    font-size: 16px;
+    line-height: 1.35;
+    word-break: break-word;
+    transition: color 0.2s ease;
+  }
+
+  li.task.done .label {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  li.task .delete {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 10px;
+    background: #f6ede2;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  li.task .delete:hover { background: #fbdfe2; color: var(--accent-dark); }
+  li.task .delete:active { transform: scale(0.9); }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: 15px;
+    padding: 28px 12px;
+    font-style: italic;
+  }
+
+  .stats {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Sarcastic <span>To-Do</span></h1>
+      <p>Productivity, but with attitude.</p>
+    </header>
+
+    <form class="composer" id="composer">
+      <input type="text" id="taskInput" placeholder="What will you maybe do today?" autocomplete="off" maxlength="200">
+      <button type="submit">Add</button>
+    </form>
+
+    <div class="quip" id="quip"></div>
+
+    <ul class="tasks" id="taskList"></ul>
+    <div class="empty" id="empty" hidden>Nothing here. Suspiciously productive of you.</div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "sarcastic-todo.tasks.v1";
+
+  var addQuips = [
+    "Wow, bold of you to think you'll actually do that.",
+    "Adding it to the list. The list of things future-you will ignore.",
+    "Ambitious. I respect it. I also don't believe it.",
+    "Great, another thing to feel guilty about at 11pm.",
+    "Logged. Filed under: 'things that sounded easier at the time'.",
+    "Look at you, planning. Character development!",
+    "Sure, and I'm sure you'll also fold the laundry immediately after.",
+    "Noted. The universe is holding its breath.",
+    "That's the spirit. The spirit of last-minute panic.",
+    "New task acquired. Motivation not included.",
+    "Big dreams, tiny list. Classic.",
+    "Added! Your future self says thanks (eventually, reluctantly).",
+    "Ah yes, the classic 'write it down so I can pretend I'm organized'.",
+    "Queued up. It's now legally your responsibility.",
+    "Bold move putting that in writing."
+  ];
+
+  var completeQuips = [
+    "Congratulations, you did the bare minimum. The bar was on the floor.",
+    "Look at you, actually doing things. Weird flex, but okay.",
+    "Done? Honestly, I'm as shocked as you are.",
+    "One task down. Don't let it go to your head.",
+    "Checkmark earned. Slightly proud of you. Slightly.",
+    "Achievement unlocked: functioning adult behavior.",
+    "Well well well. Someone's on a roll.",
+    "You actually did it. I've prepared a modest applause.",
+    "Whoa. Take a lap, champion of chores.",
+    "Done and dusted. The bar remains underground, but still.",
+    "Incredible. Do you want a trophy or just this sentence?",
+    "Marked complete. The gods of productivity nod approvingly.",
+    "You monster of efficiency, you.",
+    "See? Doing things is technically possible. Who knew.",
+    "Task obliterated. Please remain humble."
+  ];
+
+  var emptyQuips = [
+    "An empty list. Either very lazy or suspiciously organized.",
+    "No tasks? Living the dream, I see."
+  ];
+
+  var lastQuip = { add: -1, complete: -1 };
+
+  function pick(pool, kind) {
+    var i;
+    do {
+      i = Math.floor(Math.random() * pool.length);
+    } while (pool.length > 1 && i === lastQuip[kind]);
+    lastQuip[kind] = i;
+    return pool[i];
+  }
+
+  var taskInput = document.getElementById("taskInput");
+  var composer = document.getElementById("composer");
+  var taskList = document.getElementById("taskList");
+  var quipEl = document.getElementById("quip");
+  var emptyEl = document.getElementById("empty");
+  var statsEl = document.getElementById("stats");
+
+  var tasks = load();
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(function (t) {
+        return t && typeof t.text === "string";
+      }).map(function (t) {
+        return { text: t.text, done: !!t.done };
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (e) { /* private browsing or storage full; not fatal */ }
+  }
+
+  function showQuip(text, kind) {
+    quipEl.textContent = text;
+    quipEl.classList.remove("show", "add", "complete");
+    // Force a reflow so the transition restarts even on rapid clicks.
+    void quipEl.offsetWidth;
+    quipEl.classList.add("show", kind);
+  }
+
+  function render() {
+    taskList.innerHTML = "";
+
+    tasks.forEach(function (task, index) {
+      var li = document.createElement("li");
+      li.className = "task" + (task.done ? " done" : "");
+
+      var checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = task.done;
+      checkbox.setAttribute("aria-label", "Mark '" + task.text + "' as done");
+      checkbox.addEventListener("change", function () {
+        toggleTask(index);
+      });
+
+      var label = document.createElement("span");
+      label.className = "label";
+      label.textContent = task.text;
+
+      var del = document.createElement("button");
+      del.className = "delete";
+      del.textContent = "✕";
+      del.setAttribute("aria-label", "Delete '" + task.text + "'");
+      del.addEventListener("click", function () {
+        deleteTask(index);
+      });
+
+      li.appendChild(checkbox);
+      li.appendChild(label);
+      li.appendChild(del);
+      taskList.appendChild(li);
+    });
+
+    var done = tasks.filter(function (t) { return t.done; }).length;
+    emptyEl.hidden = tasks.length !== 0;
+    statsEl.textContent = tasks.length === 0
+      ? ""
+      : done + " of " + tasks.length + " done" +
+        (tasks.length > 0 && done === tasks.length ? " — suspiciously complete." : "");
+  }
+
+  function toggleTask(index) {
+    var wasDone = tasks[index].done;
+    tasks[index].done = !tasks[index].done;
+    save();
+    render();
+    showQuip(pick(completeQuips, "complete"), "complete");
+  }
+
+  function deleteTask(index) {
+    tasks.splice(index, 1);
+    save();
+    render();
+  }
+
+  composer.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = taskInput.value.trim();
+    if (!text) {
+      showQuip("You'll have to actually type something. Revolutionary, I know.", "add");
+      return;
+    }
+    tasks.unshift({ text: text, done: false });
+    save();
+    render();
+    showQuip(pick(addQuips, "add"), "add");
+    taskInput.value = "";
+    taskInput.focus();
+  });
+
+  render();
+  if (tasks.length === 0) {
+    showQuip(pick(emptyQuips, "add"), "add");
+  }
+})();
+</script>
+</body>
+</html>
