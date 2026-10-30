@@ -1,0 +1,16 @@
+{
+  "name": "Sarcastic To-Do",
+  "short_name": "Sarcastic To-Do",
+  "description": "A to-do list that roasts you gently.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdf6ec",
+  "theme_color": "#fdf6ec",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
